@@ -207,21 +207,15 @@ def main():
         "splitter": ["best", "random"],
         "max_depth": [None, 1,  5, 10],
         "min_samples_split": [2, 5, 10],
-        "min_samples_leaf": [1, 2, 3, 4, 5, 10],
-        "min_weight_fraction_leaf": [0.0, 0.1, 0.2, 0.5],
-        "max_features": [None, "auto", "sqrt", "log2"],
-        "random_state": [0],
-        "max_leaf_nodes": [None, 1, 2, 35, 6, 7, 8, 9, 10],
-        "min_impurity_decrease": [0.0, 0.2, 0.5]
+        "max_features": [None, "sqrt", "log2"],
+        "random_state": [0]
     }
 
     random_forest_hyperparameters = {
-        "n_estimators": [10, 500, 1000],
+        "n_estimators": [10, 500],
         "criterion": ["gini", "entropy"],
-        "max_depth": [None, 1, 3, 5, 10],
-        "min_samples_split": [1, 3, 5, 10],
-        "min_samples_leaf": [1, 3, 5, 10],
-        "max_features": [None, "auto", "sqrt", "log2"],
+        "max_depth": [None, 1, 5],
+        "max_features": [None, "sqrt", "log2"],
         "n_jobs": [-1],
         "random_state": [0],
         "verbose": [True],
