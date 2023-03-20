@@ -155,8 +155,10 @@ def train_and_test_models(X_train: np.ndarray, X_test: np.ndarray, y_train: np.n
             if overwrite_output:
                 df["Accuracy"][df.Model == model_name] = accuracy
                 df["F1 score"][df.Model == model_name] = f1
-                df["Training time"][df.Model == model_name] = training_times[model_name] if model_name in training_times else "N/A"
-                df["Hyperparameters"][df.Model == model_name] = str(model.get_params())
+                df["Training time"][df.Model ==
+                                    model_name] = training_times[model_name] if model_name in training_times else "N/A"
+                df["Hyperparameters"][df.Model ==
+                                      model_name] = str(model.get_params())
             else:
                 print(
                     f"Model {model_name} already exists in test results file. Skipping...")
