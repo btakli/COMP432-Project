@@ -4,6 +4,7 @@ import os
 import pickle
 import time
 from pathlib import Path
+import numpy as np
 import pandas as pd
 
 import matplotlib.pyplot as plt
@@ -17,7 +18,7 @@ import sklearn.tree
 import functions as f
 
 
-def train_and_save_models(model, X_train, y_train, model_name: str, model_folder_path: str, overwrite: bool = False):
+def train_and_save_models(model: sklearn.base.ClassifierMixin, X_train: np.ndarray, y_train: np.ndarray, model_name: str, model_folder_path: str, overwrite: bool = False):
     """Trains and saves the model to the models folder.
 
     Arguments:
@@ -47,7 +48,7 @@ def train_and_save_models(model, X_train, y_train, model_name: str, model_folder
         return end_time - start_time
 
 
-def test_model(model, X_test, y_test) -> tuple:
+def test_model(model: sklearn.base.ClassifierMixin, X_test: np.ndarray, y_test: np.ndarray) -> tuple:
     """Tests the model on the test set.
 
     Arguments:
@@ -79,7 +80,7 @@ def load_model(model_name: str, model_folder_path: str):
     return pickle.load(open(model_file, "rb"))
 
 
-def prepare_data() -> tuple:
+def prepare_data() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Prepares the data for training and testing.
 
     Returns:
@@ -107,7 +108,7 @@ def prepare_data() -> tuple:
     return X_train, X_test, y_train, y_test
 
 
-def train_and_test_models(X_train, X_test, y_train, y_test, models_folder_path: str, models: dict, test_results_file_path: str, overwrite_output=False, overwrite_saved_models=False):
+def train_and_test_models(X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, y_test: np.ndarray, models_folder_path: str, models: dict, test_results_file_path: str, overwrite_output=False, overwrite_saved_models=False):
     """Trains and tests all the models. Stores models in specified models folder
 
     Arguments:

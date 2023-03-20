@@ -122,8 +122,9 @@ def preprocess_data(raw_data: pd.DataFrame, verbose: bool, columns_to_drop: list
     return data
 
 
-def get_size_difference(old_data: pd.DataFrame, new_data: pd.DataFrame) -> tuple:
-    """Returns the difference in size between the old and new data sets in terms of rows and columns by percentage."""
+def get_size_difference(old_data: pd.DataFrame, new_data: pd.DataFrame) -> tuple[int, int]:
+    """Gets the difference in size between the old and new data sets in terms of rows and columns.
+    Returns (row_count_difference, column_count_difference) tuple."""
     row_count_difference = old_data.shape[0] - new_data.shape[0]
     column_count_difference = old_data.shape[1] - new_data.shape[1]
     return (row_count_difference, column_count_difference)
