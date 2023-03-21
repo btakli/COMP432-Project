@@ -170,6 +170,41 @@ def train_and_test_models(X_train: np.ndarray, X_test: np.ndarray, y_train: np.n
         df.to_csv(test_results_file_path, index=False)
 
 
+def plot_loss_curve(model_name: str, models_folder: str, output_folder_path: str):
+    """Plots the loss curves for the specified model.
+
+    Arguments:
+    - model_name: The name of the model to plot the loss curve for
+    - models_folder: The folder containing the models
+    - output_folder_path: The folder to store the loss curve plot to"""
+
+    model = load_model(model_name, models_folder)
+
+    if "gridsearch" in model_name:
+        print("Model is a gridsearch object. Getting best estimator...")
+        model = model.best_estimator_
+
+    if not hasattr(model, "loss_curve_"):
+        print(
+            f"Model {model_name} does not have a loss curve. Skipping plotting...")
+        return
+
+    if not os.path.exists(output_folder_path):
+        os.makedirs(output_folder_path)
+
+    # If we are using gridsearch, we need to get the best estimator, 
+    # otherwise it tries to get the curve from the gridsearch object, 
+    # which doesn't have it.
+
+    plt.plot(model.loss_curve_)
+    plt.title(f"Loss curve for model {model_name}")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.savefig(os.path.join(output_folder_path,
+                f"{model_name}_loss_curve.png"))
+    plt.clf()
+
+
 def main():
 
     # Prepare data
@@ -239,6 +274,15 @@ def main():
 
     train_and_test_models(X_train, X_test, y_train, y_test, model_folder_path,
                           models_to_train_search, test_result_file, overwrite_output=False, overwrite_saved_models=False)
+
+    # Plot the loss curve of each model
+    for model_name in models_to_train:
+        plot_loss_curve(model_name, model_folder_path, os.path.join(
+            parent_dir, 'reports', 'figures'))
+
+    for model_name in models_to_train_search:
+        plot_loss_curve(model_name, model_folder_path, os.path.join(
+            parent_dir, 'reports', 'figures'))
 
 
 if __name__ == "__main__":
