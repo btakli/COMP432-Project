@@ -217,8 +217,12 @@ def load_model(model_name: str, model_folder_path: str):
     return pickle.load(open(model_file, "rb"))
 
 
-def prepare_data() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def prepare_data(columns_to_drop=[]) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Prepares the data for training and testing.
+
+    Arguments:
+    columns_to_drop: The columns to drop from the data. E.g. ['C_SEV', 'P_SAFE', 'C_RSUR', 'P_USER']. 
+        Excludes C_YEAR and C_CASE which are always dropped.
 
     Returns:
     (X_train, X_test, y_train, y_test) tuple"""
@@ -231,7 +235,7 @@ def prepare_data() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     # f.profile_data(raw_data, os.path.join(parent_dir, 'reports', 'raw_data_profile.html'))
     # preprocess data
     data = preprocess_data(raw_data, verbose=True,
-                             columns_to_drop=['C_SEV', 'P_SAFE'])
+                             columns_to_drop=columns_to_drop)
     # profile data
     # f.profile_data(data, os.path.join(parent_dir, 'reports', 'preprocessed_data_profile.html'))
 

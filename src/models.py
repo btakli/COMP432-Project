@@ -15,7 +15,7 @@ import functions as f
 def main():
 
     # Prepare data
-    X_train, X_test, y_train, y_test = f.prepare_data()
+    X_train, X_test, y_train, y_test = f.prepare_data(columns_to_drop=['C_SEV', 'P_SAFE'])
 
     parent_dir = Path(__file__).parents[1]
 
