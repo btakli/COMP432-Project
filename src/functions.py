@@ -12,7 +12,7 @@ import ydata_profiling as yp
 
 def get_data(file_name: str) -> pd.DataFrame:
     """Reads the data from the file and returns it as a pandas DataFrame.
-    
+
     Description of the data:
     - C_YEAR: Year of the accident
     - C_MNTH: Month of the accident
@@ -41,6 +41,7 @@ def get_data(file_name: str) -> pd.DataFrame:
 
     return data
 
+
 def profile_data(data: pd.DataFrame, output_path: str):
     """Profiles the data and saves the report to the output path.
 
@@ -49,6 +50,7 @@ def profile_data(data: pd.DataFrame, output_path: str):
     output_path: The path to the output folder"""
     report = yp.ProfileReport(data)
     report.to_file(output_path)
+
 
 def preprocess_data(raw_data: pd.DataFrame, verbose: bool, columns_to_drop: list[str]) -> pd.DataFrame:
     """Preprocesses the data and returns it as a pandas DataFrame.
@@ -85,13 +87,15 @@ def preprocess_data(raw_data: pd.DataFrame, verbose: bool, columns_to_drop: list
 
     # Drop columns mentioned in the columns_to_drop argument
     # Remove columns we already dropped if they're in the array
-    columns_to_drop = [column for column in columns_to_drop if column in data.columns]
+    columns_to_drop = [
+        column for column in columns_to_drop if column in data.columns]
     # List invalid columns we tried to drop
-    invalid_columns = [column for column in columns_to_drop if column not in data.columns]
+    invalid_columns = [
+        column for column in columns_to_drop if column not in data.columns]
     if len(invalid_columns) > 0:
         print(
             f"Warning: Tried to drop invalid columns: {invalid_columns}. Ignoring these columns.")
-    
+
     data = data.drop(columns=columns_to_drop)
 
     data = data[~data.isin(['U', 'UU', 'UUUU', 'X', 'XX',
@@ -235,7 +239,7 @@ def prepare_data(columns_to_drop=[]) -> tuple[np.ndarray, np.ndarray, np.ndarray
     # f.profile_data(raw_data, os.path.join(parent_dir, 'reports', 'raw_data_profile.html'))
     # preprocess data
     data = preprocess_data(raw_data, verbose=True,
-                             columns_to_drop=columns_to_drop)
+                           columns_to_drop=columns_to_drop)
     # profile data
     # f.profile_data(data, os.path.join(parent_dir, 'reports', 'preprocessed_data_profile.html'))
 
@@ -294,12 +298,12 @@ def train_and_test_models(X_train: np.ndarray, X_test: np.ndarray, y_train: np.n
 
         if model_name in df.Model.values:
             if overwrite_output:
-                df["Accuracy"][df.Model == model_name] = accuracy
-                df["F1 score"][df.Model == model_name] = f1
-                df["Training time"][df.Model ==
-                                    model_name] = training_times[model_name] if model_name in training_times else "N/A"
-                df["Hyperparameters"][df.Model ==
-                                      model_name] = str(model.get_params())
+                df.loc[df.Model == model_name, "Accuracy"] = accuracy
+                df.loc[df.Model == model_name, "F1 score"] = f1
+                df.loc[df.Model == model_name,
+                       "Training time"] = training_times[model_name] if model_name in training_times else "N/A"
+                df.loc[df.Model == model_name, "Hyperparameters"] = str(
+                    model.get_params())
             else:
                 print(
                     f"Model {model_name} already exists in test results file. Skipping...")
@@ -333,8 +337,8 @@ def plot_loss_curve(model_name: str, models_folder: str, output_folder_path: str
     if not os.path.exists(output_folder_path):
         os.makedirs(output_folder_path)
 
-    # If we are using gridsearch, we need to get the best estimator, 
-    # otherwise it tries to get the curve from the gridsearch object, 
+    # If we are using gridsearch, we need to get the best estimator,
+    # otherwise it tries to get the curve from the gridsearch object,
     # which doesn't have it.
 
     plt.plot(model.loss_curve_)
@@ -344,6 +348,7 @@ def plot_loss_curve(model_name: str, models_folder: str, output_folder_path: str
     plt.savefig(os.path.join(output_folder_path,
                 f"{model_name}_loss_curve.png"))
     plt.clf()
+
 
 def compare_training_and_testing_accuracy(model_name: str, models_folder_path: str, X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, y_test: np.ndarray, output_file_path: str, overwrite_output: bool = False):
     """Compares the training and testing accuracy and f1-score for the specified model. Writes to a csv file.
@@ -369,27 +374,27 @@ def compare_training_and_testing_accuracy(model_name: str, models_folder_path: s
         f"Model {model_name} training accuracy: {train_accuracy:.2f}, training F1 score: {train_f1:.2f}")
     print(
         f"Model {model_name} testing accuracy: {test_accuracy:.2f}, testing F1 score: {test_f1:.2f}")
-    
+
     if not os.path.exists(output_file_path):
         pd.DataFrame(columns=['Model', 'Training accuracy', 'Training F1 score', 'Testing accuracy', 'Testing F1 score']).to_csv(
             output_file_path, index=False)
-        
+
     df = pd.read_csv(output_file_path)
 
     if model_name in df.Model.values:
         if overwrite_output:
-            df["Training accuracy"][df.Model == model_name] = train_accuracy
-            df["Training F1 score"][df.Model == model_name] = train_f1
-            df["Testing accuracy"][df.Model == model_name] = test_accuracy
-            df["Testing F1 score"][df.Model == model_name] = test_f1
+            df.loc[df.Model == model_name,
+                   "Training accuracy"] = train_accuracy
+            df.loc[df.Model == model_name, "Training F1 score"] = train_f1
+            df.loc[df.Model == model_name, "Testing accuracy"] = test_accuracy
+            df.loc[df.Model == model_name, "Testing F1 score"] = test_f1
         else:
             print(
                 f"Model {model_name} already exists in comparison results file. Skipping...")
-            
+
     else:
         addition = pd.DataFrame(
             [[model_name, train_accuracy, train_f1, test_accuracy, test_f1]], columns=['Model', 'Training accuracy', 'Training F1 score', 'Testing accuracy', 'Testing F1 score'])
         df = pd.concat([df, addition])
-    
+
     df.to_csv(output_file_path, index=False)
-    

@@ -2,6 +2,7 @@
 import os
 from pathlib import Path
 
+import autosklearn.classification as autosklearn
 import sklearn
 import sklearn.ensemble
 import sklearn.model_selection
@@ -15,7 +16,8 @@ import functions as f
 def main():
 
     # Prepare data
-    X_train, X_test, y_train, y_test = f.prepare_data(columns_to_drop=['C_SEV', 'P_SAFE'])
+    X_train, X_test, y_train, y_test = f.prepare_data(
+        columns_to_drop=['C_SEV', 'P_SAFE'])
 
     parent_dir = Path(__file__).parents[1]
 
@@ -23,7 +25,8 @@ def main():
 
     test_result_file = os.path.join(parent_dir, 'reports', 'test_results.csv')
 
-    training_and_testing_results_file = os.path.join(parent_dir, 'reports', 'training_and_testing_comparison_results.csv')
+    training_and_testing_results_file = os.path.join(
+        parent_dir, 'reports', 'training_and_testing_comparison_results.csv')
 
     models_to_train = {
         "decision_tree": sklearn.tree.DecisionTreeClassifier(random_state=0),
@@ -35,7 +38,7 @@ def main():
 
     # Train and test models
     f.train_and_test_models(X_train, X_test, y_train, y_test, model_folder_path,
-                          models_to_train, test_result_file, overwrite_output=False, overwrite_saved_models=False)
+                            models_to_train, test_result_file, overwrite_output=False, overwrite_saved_models=False)
 
     # Hyperparameter search:
 
@@ -82,9 +85,9 @@ def main():
     }
 
     f.train_and_test_models(X_train, X_test, y_train, y_test, model_folder_path,
-                          models_to_train_search, test_result_file, overwrite_output=False, overwrite_saved_models=False)
-    
-     # Compare training and testing accuracy and f1-score for each model
+                            models_to_train_search, test_result_file, overwrite_output=False, overwrite_saved_models=False)
+
+    # Compare training and testing accuracy and f1-score for each model
     print("Comparing training and testing accuracy and f1-score...")
     for model_name in models_to_train | models_to_train_search:
         f.compare_training_and_testing_accuracy(model_name, model_folder_path, X_train, X_test, y_train, y_test,
@@ -94,6 +97,18 @@ def main():
     for model_name in models_to_train | models_to_train_search:
         f.plot_loss_curve(model_name, model_folder_path, os.path.join(
             parent_dir, 'reports', 'figures'))
+
+    # Auto sklearn
+    auto_sklearn_model = autosklearn.AutoSklearnClassifier(
+        time_left_for_this_task=600, seed=0)
+
+    f.train_and_test_models(X_train, X_test, y_train, y_test, model_folder_path, {
+                            "auto_sklearn": auto_sklearn_model}, test_result_file, overwrite_output=False, overwrite_saved_models=False)
+
+    print("Comparing training and testing accuracy and f1-score...")
+    f.compare_training_and_testing_accuracy("auto_sklearn", model_folder_path, X_train, X_test, y_train, y_test,
+                                            training_and_testing_results_file, overwrite_output=True)
+
 
 if __name__ == "__main__":
     main()
