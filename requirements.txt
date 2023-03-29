@@ -1,4 +1,3 @@
-auto_sklearn==0.15.0
 matplotlib==3.6.3
 numpy==1.23.5
 pandas==1.5.3

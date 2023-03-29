@@ -19,7 +19,7 @@ def main():
     X_train, X_test, y_train, y_test = f.prepare_data(
         columns_to_drop=['C_SEV', 'P_SAFE'])
 
-    parent_dir = Path(__file__).parents[1]
+    parent_dir = Path().resolve()
 
     model_folder_path = os.path.join(parent_dir, 'models')
 

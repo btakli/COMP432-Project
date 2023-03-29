@@ -36,7 +36,12 @@ def get_data(file_name: str) -> pd.DataFrame:
     - P_ISEV: Injury severity of the person
     - P_SAFE: Safety equipment used by the person
     - P_USER: Type of user
-    - C_CASE: Case number"""
+    - C_CASE: Case number
+    
+    Usage Example:
+
+    data = get_data("./src/data/accident_data.csv")
+    """
     data = pd.read_csv(file_name, header=0)
 
     return data
@@ -47,7 +52,11 @@ def profile_data(data: pd.DataFrame, output_path: str):
 
     Arguments: 
     data: The data to be profiled
-    output_path: The path to the output folder"""
+    output_path: The path to the output folder
+    
+    Usage Example:
+    profile_data(data, "./src/data/profile_report.html")
+    """
     report = yp.ProfileReport(data)
     report.to_file(output_path)
 
@@ -58,16 +67,21 @@ def preprocess_data(raw_data: pd.DataFrame, verbose: bool, columns_to_drop: list
     Arguments:
     raw_data: The data to be preprocessed
     verbose: Whether to print the data dimensions, head and size reduction after preprocessing.
-    columns_to_drop: The columns to drop from the data. Excludes C_YEAR, C_CASE as it is automatically dropped.
+    columns_to_drop: The columns to drop from the data. Excludes C_YEAR, C_CASE, P_ID, V_ID as it is automatically dropped.
 
     Preprocessing steps:
     - We will drop all rows with missing/unknown values in the remaining columns of interest (i.e rows that contain U, UU, X, XX for any column of interest).
     - We will drop the C_YEAR column as all data is from 2019.
     - We will drop the C_CASE column as it is not needed.
+    - We will drop the P_ID and V_ID columns as they are not needed.
     - C_WTHR: Convert Q to 0 as it is still a weather condition, but different from the other values.
     - P_SEX: Convert F to 0 and M to 1.
     - C_MNTH and C_WDAY: Convert to int, now that we have dropped all rows with missing values.
     - Normalize the data (i.e. convert all values to floats)
+
+    Usage Example:
+
+    data = preprocess_data(data, verbose=True, columns_to_drop=['C_WTHR','P_SAFE'])
 
     """
 
@@ -132,7 +146,18 @@ def preprocess_data(raw_data: pd.DataFrame, verbose: bool, columns_to_drop: list
 
 def get_size_difference(old_data: pd.DataFrame, new_data: pd.DataFrame) -> tuple[int, int]:
     """Gets the difference in size between the old and new data sets in terms of rows and columns.
-    Returns (row_count_difference, column_count_difference) tuple."""
+    Returns (row_count_difference, column_count_difference) tuple.
+    
+    Arguments:
+    - old_data: The old data set
+    - new_data: The new data set
+
+    Returns:
+    tuple of (row_count_difference, column_count_difference)
+
+    Usage Example:
+    row_count_difference, column_count_difference = get_size_difference(old_data, new_data)
+    """
     row_count_difference = old_data.shape[0] - new_data.shape[0]
     column_count_difference = old_data.shape[1] - new_data.shape[1]
     return (row_count_difference, column_count_difference)
@@ -159,7 +184,7 @@ def extract_features_and_labels(data: pd.DataFrame, label_column: str) -> tuple[
     return (features, labels)
 
 
-def train_and_save_models(model: sklearn.base.ClassifierMixin, X_train: np.ndarray, y_train: np.ndarray, model_name: str, model_folder_path: str, overwrite: bool = False):
+def train_and_save_models(model: sklearn.base.ClassifierMixin, X_train: np.ndarray, y_train: np.ndarray, model_name: str, model_folder_path: str, overwrite: bool = False) -> float:
     """Trains and saves the model to the models folder.
 
     Arguments:
@@ -172,6 +197,9 @@ def train_and_save_models(model: sklearn.base.ClassifierMixin, X_train: np.ndarr
 
     Returns:
     training time in seconds (-1 if model already exists and overwrite is False)
+
+    Usage Example:
+    training_time = train_and_save_models(model, X_train, y_train, model_name, model_folder_path, overwrite)
     """
 
     model_file = os.path.join(model_folder_path, f"{model_name}.pkl")
@@ -199,6 +227,9 @@ def test_model(model: sklearn.base.ClassifierMixin, X_test: np.ndarray, y_test: 
 
     Returns:
     (accuracy, f1 score) tuple
+
+    Usage Example:
+    accuracy, f1 = test_model(model, X_test, y_test)
     """
     y_pred = model.predict(X_test)
     accuracy = sklearn.metrics.accuracy_score(y_test, y_pred)
@@ -207,7 +238,7 @@ def test_model(model: sklearn.base.ClassifierMixin, X_test: np.ndarray, y_test: 
     return (accuracy, f1)
 
 
-def load_model(model_name: str, model_folder_path: str):
+def load_model(model_name: str, model_folder_path: str) -> sklearn.base.ClassifierMixin:
     """Loads the model from the models folder.
 
     Arguments:
@@ -216,32 +247,48 @@ def load_model(model_name: str, model_folder_path: str):
 
     Returns:
     The model
+
+    Usage Example:
+    model = load_model(model_name, model_folder_path)
     """
+
     model_file = os.path.join(model_folder_path, f"{model_name}.pkl")
     return pickle.load(open(model_file, "rb"))
 
 
-def prepare_data(columns_to_drop=[]) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Prepares the data for training and testing.
+def prepare_data(columns_to_drop: list =[]) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Prepares the data for training and testing. Creates a profile report for the raw data and preprocessed data.
+
+    The data is first preprocesssed by:
+    - Dropping the columns specified in columns_to_drop
+    - Dropping the C_YEAR, C_CASE, P_ID, V_ID columns
+    - Dropping rows with missing/unknown values
+    
+    Then a profile report is created for the raw data and preprocessed data.
+
+    The data is split into training and testing sets with a 80/20 split, the features are one hot encoded.
 
     Arguments:
     columns_to_drop: The columns to drop from the data. E.g. ['C_SEV', 'P_SAFE', 'C_RSUR', 'P_USER']. 
         Excludes C_YEAR and C_CASE which are always dropped.
 
     Returns:
-    (X_train, X_test, y_train, y_test) tuple"""
+    (X_train, X_test, y_train, y_test) tuple
+    
+    Usage Example:
+    X_train, X_test, y_train, y_test = prepare_data(columns_to_drop)"""
     # import data from data folder
-    parent_dir = Path(__file__).parents[1]
+    parent_dir = Path().resolve()
     file_path = os.path.join(parent_dir, 'data', "2019_dataset_en.csv")
     raw_data = get_data(file_path)
 
     # profile data
-    # f.profile_data(raw_data, os.path.join(parent_dir, 'reports', 'raw_data_profile.html'))
+    profile_data(raw_data, os.path.join(parent_dir, 'reports', 'raw_data_profile.html'))
     # preprocess data
     data = preprocess_data(raw_data, verbose=True,
                            columns_to_drop=columns_to_drop)
     # profile data
-    # f.profile_data(data, os.path.join(parent_dir, 'reports', 'preprocessed_data_profile.html'))
+    profile_data(data, os.path.join(parent_dir, 'reports', 'preprocessed_data_profile.html'))
 
     # Extract features and labels. We will use the day of the week as the label.
     X, y = extract_features_and_labels(data, "C_WDAY")
@@ -265,7 +312,10 @@ def train_and_test_models(X_train: np.ndarray, X_test: np.ndarray, y_train: np.n
     - models: A dictionary of models to be trained and tested
     - test_results_file_path: The path to the test results file
     - overwrite_output: Whether to overwrite the output file if it already exist or to append to it (default: False).
-    - overwrite_saved_models: Whether to overwrite the saved models if they already exist or not (default: False)."""
+    - overwrite_saved_models: Whether to overwrite the saved models if they already exist or not (default: False).
+    
+    Usage Example:
+    train_and_test_models(X_train, X_test, y_train, y_test, models_folder_path, models, test_results_file_path, overwrite_output, overwrite_saved_models)"""
 
     training_times = {}  # Dictionary to store training times
     for model_name, model in models.items():
@@ -321,7 +371,11 @@ def plot_loss_curve(model_name: str, models_folder: str, output_folder_path: str
     Arguments:
     - model_name: The name of the model to plot the loss curve for
     - models_folder: The folder containing the models
-    - output_folder_path: The folder to store the loss curve plot to"""
+    - output_folder_path: The folder to store the loss curve plot to
+    
+    Usage Example:
+    plot_loss_curve(model_name, models_folder, output_folder_path)
+    """
 
     model = load_model(model_name, models_folder)
 
@@ -359,7 +413,10 @@ def compare_training_and_testing_accuracy(model_name: str, models_folder_path: s
     - X_train: The training features
     - X_test: The test features
     - y_train: The training labels
-    - y_test: The test labels"""
+    - y_test: The test labels
+    
+    Usage Example:
+    compare_training_and_testing_accuracy(model_name, models_folder_path, X_train, X_test, y_train, y_test, output_file_path, overwrite_output)"""
 
     model = load_model(model_name, models_folder_path)
 
