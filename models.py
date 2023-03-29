@@ -2,7 +2,7 @@
 import os
 from pathlib import Path
 
-import autosklearn.classification as autosklearn
+#import autosklearn.classification as autosklearn
 import sklearn
 import sklearn.ensemble
 import sklearn.model_selection

@@ -403,6 +403,46 @@ def plot_loss_curve(model_name: str, models_folder: str, output_folder_path: str
                 f"{model_name}_loss_curve.png"))
     plt.clf()
 
+def plot_loss_curves_overlapping(models: dict, models_folder: str, output_folder_path: str):
+    """Plots the loss curves for the specified models, all on the same plot.
+
+    Outputs a plot with all the loss curves on the same plot, saved as a png file named "loss_curves_all_models.png" in the specified output folder.
+
+    Arguments:
+    - models: A dictionary of models to plot the loss curves for
+    - models_folder: The folder containing the models
+    - output_folder_path: The folder to store the loss curve plot to
+    
+    Usage Example:
+    plot_loss_curves_overlapping(models, models_folder, output_folder_path)
+    """
+
+    if not os.path.exists(output_folder_path):
+        os.makedirs(output_folder_path)
+
+    for model_name in models.keys():
+        print(f"Loading model {model_name}...")
+        loaded_model = load_model(model_name, models_folder)
+
+        if "gridsearch" in model_name:
+            print("Model is a gridsearch object. Getting best estimator...")
+            loaded_model = loaded_model.best_estimator_
+
+        print(f"Plotting loss curve for model {model_name}...")
+        if not hasattr(loaded_model, "loss_curve_"):
+            print(
+                f"Model {model_name} does not have a loss curve. Skipping plotting...")
+            continue
+
+        plt.plot(loaded_model.loss_curve_, label=model_name)
+
+    plt.title("Loss curves for all models")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.savefig(os.path.join(output_folder_path,
+                f"loss_curves_all_models.png"))
+    plt.clf()
 
 def compare_training_and_testing_accuracy(model_name: str, models_folder_path: str, X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, y_test: np.ndarray, output_file_path: str, overwrite_output: bool = False):
     """Compares the training and testing accuracy and f1-score for the specified model. Writes to a csv file.
