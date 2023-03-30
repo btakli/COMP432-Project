@@ -1,0 +1,3 @@
+Model,Training accuracy,Training F1 score,Testing accuracy,Testing F1 score
+feature_selection_gridsearch_decision_tree,0.997601346821412,0.9976012504042252,0.3777896963737672,0.3777896739183201
+feature_selection_gridsearch_random_forest,0.9976013468214121,0.9976013832203895,0.4721551801197819,0.47199204745832335

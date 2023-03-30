@@ -410,7 +410,7 @@ def plot_loss_curve(model_name: str, models_folder: str, output_folder_path: str
     plt.clf()
 
 
-def plot_loss_curves_overlapping(models: dict, models_folder: str, output_folder_path: str):
+def plot_loss_curves_overlapping(models: dict, models_folder: str, output_folder_path: str, file_name: str = "loss_curves_all_models.png"):
     """Plots the loss curves for the specified scikit-learn models, all on the same plot.
 
     Outputs a plot with all the loss curves on the same plot, saved as a png file named "loss_curves_all_models.png" in the specified output folder.
@@ -419,6 +419,7 @@ def plot_loss_curves_overlapping(models: dict, models_folder: str, output_folder
     - models: A dictionary of models to plot the loss curves for
     - models_folder: The folder containing the models
     - output_folder_path: The folder to store the loss curve plot to
+    - file_name: The name of the file to save the plot to (default: "loss_curves_all_models.png")
 
     Usage Example:
     plot_loss_curves_overlapping(models, models_folder, output_folder_path)
@@ -448,7 +449,7 @@ def plot_loss_curves_overlapping(models: dict, models_folder: str, output_folder
     plt.ylabel("Loss")
     plt.legend()
     plt.savefig(os.path.join(output_folder_path,
-                f"loss_curves_all_models.png"))
+                file_name))
     plt.clf()
 
 
@@ -632,17 +633,18 @@ def train_and_test_pytorch(model: torch.nn.Sequential, X_train: np.ndarray, X_te
             num_predictions += data_labels.shape[0]
 
     accuracy = true_predictions / num_predictions
+    accuracy = accuracy.item()
     f1_score = sklearn.metrics.f1_score(
         data_labels, predictions, average='weighted')
 
-    print(f"Accuracy of the model: {100.0*accuracy:4.2f}%")
-    print(f"F1 score of the model: {100.0*f1_score:4.2f}%")
+    print(f"Accuracy of the model: {100.0*accuracy:.2f}%")
+    print(f"F1 score of the model: {100.0*f1_score:.2f}%")
 
     # Save the results to a csv with the following columns: model_name, accuracy, f1_score, train_time.
     # If file does not exist, create it
     if not os.path.exists(test_results_file_path):
         df = pd.DataFrame(columns=['Model', 'Accuracy', 'F1 score',
-                                   'Training time', 'Hyperparameters'])
+                                   'Training time (seconds)'])
         df.to_csv(test_results_file_path, index=False)
     df = pd.read_csv(test_results_file_path)
 
@@ -651,13 +653,13 @@ def train_and_test_pytorch(model: torch.nn.Sequential, X_train: np.ndarray, X_te
             df.loc[df.Model == model_name, "Accuracy"] = accuracy
             df.loc[df.Model == model_name, "F1 score"] = f1_score
             df.loc[df.Model == model_name,
-                   "Training time"] = train_time
+                   "Training time (seconds)"] = train_time
         else:
             print(
                 f"Model {model_name} already exists in test results file. Skipping...")
     else:
         addition = pd.DataFrame(
-            [[model_name, accuracy, f1_score, train_time]], columns=['Model', 'Accuracy', 'F1 score', 'Training time'])
+            [[model_name, accuracy, f1_score, train_time]], columns=['Model', 'Accuracy', 'F1 score', 'Training time (seconds)'])
         df = pd.concat([df, addition])
 
     df.to_csv(test_results_file_path, index=False)
@@ -703,8 +705,8 @@ def pytorch_plot_all_loss_curves(loss_values: dict[str, list[float]], save_folde
     plt.figure(figsize=(10, 5))
     for model_name, loss_values in loss_values.items():
         plt.plot(loss_values, label=model_name)
-    plt.title("Loss values over time for all models")
-    plt.xlabel("Epoch")
+    plt.title("Loss values over time for all pytorch models")
+    plt.xlabel("Iterations")
     plt.ylabel("Loss")
     plt.legend()
     plt.savefig(os.path.join(save_folder_path, "pytorch_all_models_loss_curve.png"))
