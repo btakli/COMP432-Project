@@ -7,7 +7,11 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import sklearn
+from tqdm import tqdm
 import ydata_profiling as yp
+import torch
+import torch.utils.data as torch_data
+from sklearn.metrics import f1_score
 
 
 def get_data(file_name: str) -> pd.DataFrame:
@@ -37,7 +41,7 @@ def get_data(file_name: str) -> pd.DataFrame:
     - P_SAFE: Safety equipment used by the person
     - P_USER: Type of user
     - C_CASE: Case number
-    
+
     Usage Example:
 
     data = get_data("./src/data/accident_data.csv")
@@ -53,7 +57,7 @@ def profile_data(data: pd.DataFrame, output_path: str):
     Arguments: 
     data: The data to be profiled
     output_path: The path to the output folder
-    
+
     Usage Example:
     profile_data(data, "./src/data/profile_report.html")
     """
@@ -147,7 +151,7 @@ def preprocess_data(raw_data: pd.DataFrame, verbose: bool, columns_to_drop: list
 def get_size_difference(old_data: pd.DataFrame, new_data: pd.DataFrame) -> tuple[int, int]:
     """Gets the difference in size between the old and new data sets in terms of rows and columns.
     Returns (row_count_difference, column_count_difference) tuple.
-    
+
     Arguments:
     - old_data: The old data set
     - new_data: The new data set
@@ -185,7 +189,7 @@ def extract_features_and_labels(data: pd.DataFrame, label_column: str) -> tuple[
 
 
 def train_and_save_models(model: sklearn.base.ClassifierMixin, X_train: np.ndarray, y_train: np.ndarray, model_name: str, model_folder_path: str, overwrite: bool = False) -> float:
-    """Trains and saves the model to the models folder.
+    """Trains and saves the scikit-learn model to the models folder.
 
     Arguments:
     model: The model to be trained and saved
@@ -218,7 +222,7 @@ def train_and_save_models(model: sklearn.base.ClassifierMixin, X_train: np.ndarr
 
 
 def test_model(model: sklearn.base.ClassifierMixin, X_test: np.ndarray, y_test: np.ndarray) -> tuple:
-    """Tests the model on the test set.
+    """Tests the scikit-learn model on the test set.
 
     Arguments:
     model: The model to be tested
@@ -256,14 +260,14 @@ def load_model(model_name: str, model_folder_path: str) -> sklearn.base.Classifi
     return pickle.load(open(model_file, "rb"))
 
 
-def prepare_data(columns_to_drop: list =[]) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def prepare_data(columns_to_drop: list = []) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Prepares the data for training and testing. Creates a profile report for the raw data and preprocessed data.
 
     The data is first preprocesssed by:
     - Dropping the columns specified in columns_to_drop
     - Dropping the C_YEAR, C_CASE, P_ID, V_ID columns
     - Dropping rows with missing/unknown values
-    
+
     Then a profile report is created for the raw data and preprocessed data.
 
     The data is split into training and testing sets with a 80/20 split, the features are one hot encoded.
@@ -274,7 +278,7 @@ def prepare_data(columns_to_drop: list =[]) -> tuple[np.ndarray, np.ndarray, np.
 
     Returns:
     (X_train, X_test, y_train, y_test) tuple
-    
+
     Usage Example:
     X_train, X_test, y_train, y_test = prepare_data(columns_to_drop)"""
     # import data from data folder
@@ -283,12 +287,14 @@ def prepare_data(columns_to_drop: list =[]) -> tuple[np.ndarray, np.ndarray, np.
     raw_data = get_data(file_path)
 
     # profile data
-    profile_data(raw_data, os.path.join(parent_dir, 'reports', 'raw_data_profile.html'))
+    profile_data(raw_data, os.path.join(
+        parent_dir, 'reports', 'raw_data_profile.html'))
     # preprocess data
     data = preprocess_data(raw_data, verbose=True,
                            columns_to_drop=columns_to_drop)
     # profile data
-    profile_data(data, os.path.join(parent_dir, 'reports', 'preprocessed_data_profile.html'))
+    profile_data(data, os.path.join(parent_dir, 'reports',
+                 'preprocessed_data_profile.html'))
 
     # Extract features and labels. We will use the day of the week as the label.
     X, y = extract_features_and_labels(data, "C_WDAY")
@@ -301,7 +307,7 @@ def prepare_data(columns_to_drop: list =[]) -> tuple[np.ndarray, np.ndarray, np.
 
 
 def train_and_test_models(X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, y_test: np.ndarray, models_folder_path: str, models: dict, test_results_file_path: str, overwrite_output=False, overwrite_saved_models=False):
-    """Trains and tests all the models. Stores models in specified models folder
+    """Trains and tests all the scikit-learn models. Stores models in specified models folder
 
     Arguments:
     - X_train: The training features
@@ -313,7 +319,7 @@ def train_and_test_models(X_train: np.ndarray, X_test: np.ndarray, y_train: np.n
     - test_results_file_path: The path to the test results file
     - overwrite_output: Whether to overwrite the output file if it already exist or to append to it (default: False).
     - overwrite_saved_models: Whether to overwrite the saved models if they already exist or not (default: False).
-    
+
     Usage Example:
     train_and_test_models(X_train, X_test, y_train, y_test, models_folder_path, models, test_results_file_path, overwrite_output, overwrite_saved_models)"""
 
@@ -366,13 +372,13 @@ def train_and_test_models(X_train: np.ndarray, X_test: np.ndarray, y_train: np.n
 
 
 def plot_loss_curve(model_name: str, models_folder: str, output_folder_path: str):
-    """Plots the loss curves for the specified model.
+    """Plots the loss curves for the specified scikit-learn model.
 
     Arguments:
     - model_name: The name of the model to plot the loss curve for
     - models_folder: The folder containing the models
     - output_folder_path: The folder to store the loss curve plot to
-    
+
     Usage Example:
     plot_loss_curve(model_name, models_folder, output_folder_path)
     """
@@ -403,8 +409,9 @@ def plot_loss_curve(model_name: str, models_folder: str, output_folder_path: str
                 f"{model_name}_loss_curve.png"))
     plt.clf()
 
+
 def plot_loss_curves_overlapping(models: dict, models_folder: str, output_folder_path: str):
-    """Plots the loss curves for the specified models, all on the same plot.
+    """Plots the loss curves for the specified scikit-learn models, all on the same plot.
 
     Outputs a plot with all the loss curves on the same plot, saved as a png file named "loss_curves_all_models.png" in the specified output folder.
 
@@ -412,7 +419,7 @@ def plot_loss_curves_overlapping(models: dict, models_folder: str, output_folder
     - models: A dictionary of models to plot the loss curves for
     - models_folder: The folder containing the models
     - output_folder_path: The folder to store the loss curve plot to
-    
+
     Usage Example:
     plot_loss_curves_overlapping(models, models_folder, output_folder_path)
     """
@@ -444,6 +451,7 @@ def plot_loss_curves_overlapping(models: dict, models_folder: str, output_folder
                 f"loss_curves_all_models.png"))
     plt.clf()
 
+
 def compare_training_and_testing_accuracy(model_name: str, models_folder_path: str, X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, y_test: np.ndarray, output_file_path: str, overwrite_output: bool = False):
     """Compares the training and testing accuracy and f1-score for the specified model. Writes to a csv file.
 
@@ -454,7 +462,7 @@ def compare_training_and_testing_accuracy(model_name: str, models_folder_path: s
     - X_test: The test features
     - y_train: The training labels
     - y_test: The test labels
-    
+
     Usage Example:
     compare_training_and_testing_accuracy(model_name, models_folder_path, X_train, X_test, y_train, y_test, output_file_path, overwrite_output)"""
 
@@ -495,3 +503,209 @@ def compare_training_and_testing_accuracy(model_name: str, models_folder_path: s
         df = pd.concat([df, addition])
 
     df.to_csv(output_file_path, index=False)
+
+
+def train_and_test_pytorch(model: torch.nn.Sequential, X_train: np.ndarray, X_test: np.ndarray, y_train: np.ndarray, y_test: np.ndarray, epochs: int, batch_size: int, models_folder_path: str, test_results_file_path: str, model_name: str, device: torch.device, overwrite_output=False, overwrite_saved_models=False, verbose: bool = True) -> tuple[float, float, float, list[float]]:
+    """Trains and tests a PyTorch model. Taken and adapted from Tutorial 4: Introduction to PyTorch.
+
+    Saves the model to a file named "{model_name}.pt" in the specified models folder. If the model already exists, it will not be overwritten unless overwrite_saved_models is True.
+
+    Also saves the output to the csv file specified by test_results_file_path. If the model already exists in the csv file, it will not be overwritten unless overwrite_output is True.
+
+    Arguments:
+    - model: The PyTorch model to train and test
+    - X_train: The training features
+    - X_test: The test features
+    - y_train: The training labels
+    - y_test: The test labels
+    - epochs: The number of epochs to train for
+    - batch_size: The batch size to use for training
+    - output_folder_path: The folder to store the loss curve plot to
+    - model_name: The name of the model
+    - device: The device to train on
+    - overwrite_output: Whether to overwrite the output file if it already exists
+    - overwrite_saved_models: Whether to overwrite the saved model if it already exists
+    - verbose: Whether to print loss per epoch messages
+
+    Returns:
+    Tuple (accuracy, f1_score, train_time, loss_values):
+    - accuracy: The test accuracy
+    - f1_score: The test F1 score
+    - train_time: The time taken to train the model (in seconds)
+    - loss_values: The loss values per epoch, used for plotting the loss curve
+
+    Usage Example:
+    accuracy, f1_score, train_time, loss_values = train_and_test_pytorch(model, X_train, X_test, y_train, y_test, epochs, batch_size, models_folder_path, test_results_file_path, model_name, device, overwrite_output, overwrite_saved_models, verbose)
+    """
+
+    start_time = 0
+    end_time = 0
+    train_time = 0
+    loss_values = []
+
+    model.train()
+
+    data_loader_train = torch_data.DataLoader(torch_data.TensorDataset(torch.tensor(
+        X_train), torch.tensor(y_train - 1)), batch_size=batch_size, shuffle=True)
+
+    loss_module = torch.nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(model.parameters())
+
+    # If the model already exists and we don't want to overwrite it, we can skip training
+    if os.path.exists(os.path.join(models_folder_path, f"{model_name}.pt")) and not overwrite_saved_models:
+        print(f"Model {model_name} already exists. Skipping training...")
+        model.load_state_dict(torch.load(os.path.join(
+            models_folder_path, f"{model_name}.pt")))
+    else:
+        # Training loop
+        start_time = time.time()
+        for epoch in tqdm(range(epochs)):
+            for data_inputs, data_labels in data_loader_train:
+
+                # Step 1: Move input data to device (only strictly necessary if we use GPU)
+                # MPS, the device I am using on my M2 Macbook Air, does not support float64, so I need to convert to float32
+                data_inputs = data_inputs.float().to(device)
+                data_labels = data_labels.type(torch.LongTensor).to(device)
+
+                # Step 2: Run the model on the input data
+                preds = model(data_inputs)
+                # Output is [Batch size, 1], but we want [Batch size]
+                preds = preds.squeeze(dim=1)
+
+                # Step 3: Calculate the loss
+                loss = loss_module(preds, data_labels)
+
+                # Step 4: Perform backpropagation
+                # Before calculating the gradients, we need to ensure that they are all zero.
+                # The gradients would not be overwritten, but actually added to the existing ones.
+                optimizer.zero_grad()  # EXTREMELY IMPORTANT!!!!!!!!!!!!!!
+                # Perform backpropagation
+                loss.backward()
+
+                # Step 5: Update the parameters
+                optimizer.step()
+
+                # Save the loss value
+                loss_values.append(loss.item())
+
+                if verbose:
+                    print(
+                        f"Epoch {epoch + 1}/{epochs}, Loss: {loss.item():.4f}")
+
+        end_time = time.time()
+        # Print final loss
+        print(f"Final loss after {epochs} epochs: {loss.item():.4f}")
+        # Save the model
+        if not os.path.exists(models_folder_path):
+            os.makedirs(models_folder_path)
+        torch.save(model.state_dict(), os.path.join(
+            models_folder_path, model_name) + ".pt")
+
+        train_time = end_time - start_time
+
+        if train_time == 0:
+            train_time = "N/A"
+
+    # Test the model
+
+    data_loader_test = torch_data.DataLoader(torch_data.TensorDataset(torch.tensor(
+        X_test), torch.tensor(y_test - 1)), batch_size=batch_size, shuffle=False)
+    model.eval()  # Set model to eval mode
+    true_preds, num_preds = 0., 0.
+
+    with torch.no_grad():  # Deactivate gradients for the following code
+        for data_inputs, data_labels in data_loader_test:
+
+            # Determine prediction of model on dev set
+            data_inputs, data_labels = data_inputs.float().to(
+                device), data_labels.type(torch.LongTensor).to(device)
+            # Output is [Batch size, 7], giving the probability of each class. We want the class with the highest probability.
+            probabilities = model(data_inputs)
+
+            # Get the class with the highest probability
+            predictions = torch.argmax(probabilities, dim=1)
+
+            true_predictions = 0
+            num_predictions = 0
+            # Keep records of predictions for the accuracy metric (true_preds=TP+TN, num_preds=TP+TN+FP+FN)
+            true_predictions += (predictions == data_labels).sum()
+            num_predictions += data_labels.shape[0]
+
+    accuracy = true_predictions / num_predictions
+    f1_score = sklearn.metrics.f1_score(
+        data_labels, predictions, average='weighted')
+
+    print(f"Accuracy of the model: {100.0*accuracy:4.2f}%")
+    print(f"F1 score of the model: {100.0*f1_score:4.2f}%")
+
+    # Save the results to a csv with the following columns: model_name, accuracy, f1_score, train_time.
+    # If file does not exist, create it
+    if not os.path.exists(test_results_file_path):
+        df = pd.DataFrame(columns=['Model', 'Accuracy', 'F1 score',
+                                   'Training time', 'Hyperparameters'])
+        df.to_csv(test_results_file_path, index=False)
+    df = pd.read_csv(test_results_file_path)
+
+    if model_name in df.Model.values:
+        if overwrite_output:
+            df.loc[df.Model == model_name, "Accuracy"] = accuracy
+            df.loc[df.Model == model_name, "F1 score"] = f1_score
+            df.loc[df.Model == model_name,
+                   "Training time"] = train_time
+        else:
+            print(
+                f"Model {model_name} already exists in test results file. Skipping...")
+    else:
+        addition = pd.DataFrame(
+            [[model_name, accuracy, f1_score, train_time]], columns=['Model', 'Accuracy', 'F1 score', 'Training time'])
+        df = pd.concat([df, addition])
+
+    df.to_csv(test_results_file_path, index=False)
+
+    return accuracy, f1_score, train_time, loss_values
+
+
+def plot_loss_from_loss_values(loss_values: list[float], model_name: str, save_folder_path: str):
+    """Plots the loss values over time. Used for the PyTorch models since they do not have a built-in function for this.
+
+    Arguments:
+    - loss_values (list): List of loss values.
+    - model_name (str): Name of the model.
+    - save_folder_path (str): Path to the folder where the plot should be saved.
+    """
+    plt.figure(figsize=(10, 5))
+    plt.plot(loss_values)
+    plt.title(f"Loss values over time for {model_name}")
+    plt.xlabel("Iteration")
+    plt.ylabel("Loss")
+    plt.savefig(os.path.join(save_folder_path, f"{model_name}_loss.png"))
+    plt.show()
+
+
+def pytorch_plot_all_loss_curves(loss_values: dict[str, list[float]], save_folder_path: str):
+    """Plots the loss values over time for all models. Used for the PyTorch models since they do not have a built-in function for this.
+
+    Saves the plot to a file called "pytorch_all_loss_curves.png".
+
+    Arguments:
+    - loss_values: Dictionary with model names as keys and lists of loss values as values.
+    - save_folder_path: Path to the folder where the plot should be saved.
+
+    Usage example:
+    loss_values = {
+        "model1": [0.1, 0.2, 0.3],
+        "model2": [0.2, 0.3, 0.4]
+    }
+
+    pytorch_plot_all_loss_curves(loss_values, "./plots/")
+
+    """
+    plt.figure(figsize=(10, 5))
+    for model_name, loss_values in loss_values.items():
+        plt.plot(loss_values, label=model_name)
+    plt.title("Loss values over time for all models")
+    plt.xlabel("Epoch")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.savefig(os.path.join(save_folder_path, "pytorch_all_models_loss_curve.png"))
+    plt.show()
